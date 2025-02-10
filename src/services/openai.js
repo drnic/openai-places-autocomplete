@@ -11,25 +11,36 @@ export async function fetchSuggestions({
   searchPriorities = "Prioritize: 1) Queensland, Australia 2) Australia 3) Worldwide",
   maxSuggestions = 5,
 }) {
+  const messages = [
+    {
+      role: "system",
+      content: systemPrompt,
+    },
+    {
+      role: "user",
+      content: `Return a raw JSON array of exactly ${maxSuggestions} suggestions starting with "${input}". ${searchPriorities}. Example format: ["Brisbane", "Bundaberg", "Byron Bay", "Berlin", "Boston"]`,
+    },
+  ];
+
+  console.log("OpenAI request:", {
+    model: "gpt-4o-mini",
+    messages,
+    temperature: 0.7,
+  });
+
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: systemPrompt,
-      },
-      {
-        role: "user",
-        content: `Return a raw JSON array of exactly ${maxSuggestions} suggestions starting with "${input}". ${searchPriorities}. Example format: ["Brisbane", "Bundaberg", "Byron Bay", "Berlin", "Boston"]`,
-      },
-    ],
+    messages,
     temperature: 0.7,
   });
 
   const content = response.choices[0].message.content.trim();
-  console.log("OpenAI response:", content);
+  console.log("OpenAI raw response:", content);
 
   // Remove any markdown formatting if present
   const cleanJson = content.replace(/```json\n?|\n?```/g, "").trim();
-  return JSON.parse(cleanJson);
+  const parsedResults = JSON.parse(cleanJson);
+  console.log("OpenAI parsed results:", parsedResults);
+
+  return parsedResults;
 }
