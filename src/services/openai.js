@@ -7,9 +7,10 @@ const openai = new OpenAI({
 
 export async function fetchSuggestions({
   input,
-  systemPrompt = "You are a helper that returns place suggestions. Respond with only a raw JSON array of strings, no markdown formatting or backticks.",
+  systemPrompt = "You are a helper that returns place suggestions.",
   searchPriorities = "Prioritize: 1) Queensland, Australia 2) Australia 3) Worldwide",
   maxSuggestions = 5,
+  temperature = 0.1,
 }) {
   const messages = [
     {
@@ -18,29 +19,46 @@ export async function fetchSuggestions({
     },
     {
       role: "user",
-      content: `Return a raw JSON array of exactly ${maxSuggestions} suggestions starting with "${input}". ${searchPriorities}. Example format: ["Brisbane", "Bundaberg", "Byron Bay", "Berlin", "Boston"]`,
+      content: `Return ${maxSuggestions} place suggestions starting with "${input}". ${searchPriorities}.`,
     },
   ];
 
   console.log("OpenAI request:", {
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     messages,
-    temperature: 0.7,
+    temperature,
+    response_format: { type: "json_object" },
   });
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     messages,
-    temperature: 0.7,
+    temperature,
+    response_format: { type: "json_object" },
+    function_call: { name: "get_suggestions" },
+    functions: [
+      {
+        name: "get_suggestions",
+        parameters: {
+          type: "object",
+          properties: {
+            suggestions: {
+              type: "array",
+              items: { type: "string" },
+              description: `Array of exactly ${maxSuggestions} place suggestions`,
+            },
+          },
+          required: ["suggestions"],
+        },
+      },
+    ],
   });
 
-  const content = response.choices[0].message.content.trim();
+  const content = response.choices[0].message.function_call.arguments;
   console.log("OpenAI raw response:", content);
 
-  // Remove any markdown formatting if present
-  const cleanJson = content.replace(/```json\n?|\n?```/g, "").trim();
-  const parsedResults = JSON.parse(cleanJson);
-  console.log("OpenAI parsed results:", parsedResults);
+  const { suggestions } = JSON.parse(content);
+  console.log("OpenAI parsed results:", suggestions);
 
-  return parsedResults;
+  return suggestions;
 }

@@ -157,10 +157,11 @@ The `fetchSuggestions` function in `services/openai.js` accepts the following op
   input: string,            // The search text
   systemPrompt?: string,    // Custom system prompt for the AI
   searchPriorities?: string, // Priority order for location suggestions
-  maxSuggestions?: number   // Number of suggestions to return (default: 5)
+  maxSuggestions?: number,  // Number of suggestions to return (default: 5)
+  temperature?: number      // Controls randomness of suggestions (default: 0.1)
 }
 ```
 
 You can also modify:
-- OpenAI model (currently using "gpt-4o-mini")
+- OpenAI model (currently using "gpt-4o")
 - Temperature setting (controls randomness)
